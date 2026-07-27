@@ -38,6 +38,7 @@ def serialize_message(message: discord.Message) -> dict[str, Any]:
         "author_name": str(message.author),
         "content": message.content,
         "attachments": [attachment.url for attachment in message.attachments],
+        "type": message.type,
     }
 
 
