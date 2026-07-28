@@ -1,7 +1,11 @@
-import discord 
+import discord
+import os
+from dotenv import load_dotenv
 
-TOKEN_AUTH = "1531096870384959648"
-GUILD_ID = "789888698673922078"
+load_dotenv()
+
+TOKEN_AUTH = os.getenv("TOKEN_AUTH")
+GUILD_ID = int(os.getenv("GUILD_ID", "0") or 0) or None
 
 class GetChannel(discord.Client):
     def __init__(self, guild_id:int, **kwargs):
@@ -32,7 +36,6 @@ class GetChannel(discord.Client):
 
 if __name__ == "__main__":
     intents = discord.Intents.default()
-    intents.guilds = True
 
     client = GetChannel(guild_id=GUILD_ID, intents=intents)
     client.run(TOKEN_AUTH)
