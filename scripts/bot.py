@@ -29,7 +29,7 @@ minerar = False
 
 async def get_historic(message: discord.Message, num:int | None = None) -> list[discord.Message]:
     message_list = []
-    async for msg in message.channel.history(limit=num, before=message, oldest_first=True):
+    async for msg in message.channel.history(limit=num, before=message, oldest_first=False):
         message_list.append(msg)
 
     return message_list
