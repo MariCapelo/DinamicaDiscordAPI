@@ -59,7 +59,7 @@ def serialize_message(message: discord.Message) -> dict[str, Any]:
         "author_global_name": str(message.author.global_name),
         "bot": message.author.bot,
         "content": message.content,
-        "mentions?": message.mentions,
+        "mentions?": True if message.mentions else False,
         "mentioned_everyone?": message.mention_everyone,
         "attachments": [attachment.url for attachment in message.attachments],
         "type": message.type,
@@ -93,6 +93,7 @@ async def on_ready() -> None:
 
 @client.event
 async def on_message(message: discord.Message) -> None:
+    global minerar # Declarando a variável global para controle de mineração
     
     # Condicionais de controle de historico
     if message.content.startswith(".historico"):
