@@ -1,13 +1,13 @@
+import discord
+
 import json
 import os
 from pathlib import Path
 from typing import Any
-
-import discord
 from dotenv import load_dotenv
 from pprint import pprint
 
-
+# Capturando variaveis de ambiente do arquivo .env 
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -17,13 +17,22 @@ CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", "0") or 0) or None
 OUTPUT_PATH = Path("data/messages.jsonl")
 OUTPUT_PATH.parent.mkdir(exist_ok=True)
 
-intents = discord.Intents.default()
-intents.guilds = True
-intents.messages = True
-intents.message_content = True
+# Configurando o bot do Discord com as intenções necessárias
+# Isso é importante para que o bot possa receber eventos de mensagens e interagir com os servidores.
+intents = discord.Intents.all()
 
+# Criando uma instância do cliente do Discord com as intenções configuradas
 client = discord.Client(intents=intents)
-history_synced = False
+
+# Variável global para controlar o estado de mineração
+minerar = False 
+
+async def get_historic(message: discord.Message, num:int | None = None) -> list[discord.Message]:
+    message_list = []
+    async for msg in message.channel.history(limit=num, before=message, oldest_first=True):
+        message_list.append(msg)
+
+    return message_list
 
 
 def should_capture(message: discord.Message) -> bool:
@@ -59,7 +68,8 @@ def serialize_message(message: discord.Message) -> dict[str, Any]:
 
 def save_message(message: discord.Message, source: str) -> None:
     message_data = serialize_message(message)
-
+    message_data["source"] = source
+    
     with OUTPUT_PATH.open("a", encoding="utf-8") as file:
         json.dump(message_data, file, ensure_ascii=False)
         file.write("\n")
@@ -83,10 +93,34 @@ async def on_ready() -> None:
 
 @client.event
 async def on_message(message: discord.Message) -> None:
-    if not should_capture(message):
-        return
-
-    save_message(message, source="live")
+    
+    # Condicionais de controle de historico
+    if message.content.startswith(".historico"):
+        partes = message.content.split()
+        if len(partes) == 2 and partes[1].isdigit():
+            num = int(partes[1])
+            historic_messages = await get_historic(message, num)
+            for msg in historic_messages:
+                save_message(msg, source="historic")
+        elif len(partes) == 1:
+            historic_messages = await get_historic(message)
+            for msg in historic_messages:
+                save_message(msg, source="historic")
+    
+    # Condicionais de controle de mineração      
+    if message.content.startswith(".minerar") and minerar is False:
+        await message.channel.send("oVo MiNeraR SEu seRViDoR :P")
+        minerar = True
+    elif message.content.startswith(".minerar") and minerar is True:
+        await message.channel.send("JÁ tO mINerAndO mEu ChaPa!")
+    elif message.content.startswith(".parar") and minerar is True:
+        await message.channel.send("Parando a mineração :P")
+        minerar = False
+    elif message.content.startswith(".parar") and minerar is False:
+        await message.channel.send("Não estou minerando nada :P")
+    
+    if minerar is True:
+        save_message(message, source="live")
 
 
 if __name__ == "__main__":
