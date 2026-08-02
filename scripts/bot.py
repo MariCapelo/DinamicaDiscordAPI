@@ -5,6 +5,7 @@ from typing import Any
 
 import discord
 from dotenv import load_dotenv
+from pprint import pprint
 
 
 load_dotenv()
@@ -25,22 +26,6 @@ client = discord.Client(intents=intents)
 history_synced = False
 
 
-def serialize_message(message: discord.Message) -> dict[str, Any]:
-    return {
-        "id": message.id,
-        "created_at": message.created_at.isoformat(),
-        "guild_id": message.guild.id if message.guild else None,
-        "guild_name": message.guild.name if message.guild else None,
-        "channel_id": message.channel.id,
-        "channel_name": getattr(message.channel, "name", str(message.channel)),
-        "author_id": message.author.id,
-        "author_name": str(message.author),
-        "content": message.content,
-        "attachments": [attachment.url for attachment in message.attachments],
-        "type": message.type,
-    }
-
-
 def should_capture(message: discord.Message) -> bool:
     if message.author == client.user:
         return False
@@ -48,8 +33,28 @@ def should_capture(message: discord.Message) -> bool:
     if GUILD_ID and (message.guild is None or message.guild.id != GUILD_ID):
         return False
 
-
     return True
+
+
+def serialize_message(message: discord.Message) -> dict[str, Any]:
+    return {
+        "id": message.id,
+        "created_at": message.created_at.isoformat(),
+        "edited_at": message.edited_at.isoformat() if message.edited_at else None,
+        "guild_id": message.guild.id if message.guild else None,
+        "guild_name": message.guild.name if message.guild else None,
+        "channel_id": message.channel.id,
+        "channel_name": getattr(message.channel, "name", str(message.channel)),
+        "author_id": message.author.id,
+        "author_server_name": str(message.author.name),
+        "author_global_name": str(message.author.global_name),
+        "bot": message.author.bot,
+        "content": message.content,
+        "mentions?": message.mentions,
+        "mentioned_everyone?": message.mention_everyone,
+        "attachments": [attachment.url for attachment in message.attachments],
+        "type": message.type,
+    }
 
 
 def save_message(message: discord.Message, source: str) -> None:
@@ -61,12 +66,7 @@ def save_message(message: discord.Message, source: str) -> None:
 
     preview = message.content.strip() or "<mensagem sem texto>"
     preview = preview.replace("\n", " ")
-    if len(preview) > 100:
-        preview = f"{preview[:97]}..."
-
-    guild_name = message.guild.name if message.guild else "DM"
-    channel_name = getattr(message.channel, "name", str(message.channel))
-    print(f"[{source.upper()}] {guild_name} / #{channel_name} / {message.author}: {preview}")
+    pprint(message)
 
 
 @client.event
