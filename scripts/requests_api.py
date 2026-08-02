@@ -49,6 +49,17 @@ def get_current_user_guilds(token: str) -> None:
     pprint(guilds)
 
 
+def get_guild_by_id(token:str) -> None:
+    try:
+        guild = discord_get(f"/guilds/{GUILD_ID}/preview", token, params={"with_counts": "true"})
+    except RuntimeError as exc:
+        if "403" in str(exc):
+            return None
+        raise
+
+    print("Informações da Guilda:")
+    pprint(guild)
+
 def get_current_user_guild_member(token: str, guild_id: str) -> None:
     try:
         member = discord_get(f"/users/@me/guilds/{guild_id}/member", token)
@@ -72,4 +83,5 @@ if __name__ == "__main__":
             "Esse token nao tem o scope 'guilds'. Gere um token OAuth2 com pelo menos 'identify guilds'."
         )
 
-    guilds = get_current_user_guilds(TOKEN_AUTH)
+    ## get_current_user_guilds(TOKEN_AUTH)
+    get_guild_by_id(TOKEN_AUTH)
