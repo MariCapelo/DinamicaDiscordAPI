@@ -29,9 +29,12 @@ minerar = False
 
 async def get_historic(message: discord.Message, num:int | None = None) -> list[discord.Message]:
     message_list = []
+    count_messages = 0
     async for msg in message.channel.history(limit=num, before=message, oldest_first=False):
+        count_messages += 1
         message_list.append(msg)
 
+    await message.channel.send(f"{count_messages} mensagens capturadas.")
     return message_list
 
 
