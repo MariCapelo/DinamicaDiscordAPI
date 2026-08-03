@@ -1,3 +1,4 @@
+# Arquivos que não devem ser versionados
 .venv/
 .env
 data/
