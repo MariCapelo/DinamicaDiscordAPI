@@ -1,126 +1,154 @@
-# Captura de mensagens do Discord com Python
+# Bot de captura de mensagens do Discord
 
-Este projeto mostra o caminho correto para ler mensagens de um servidor do Discord usando a API oficial. O fluxo e assim:
+Este projeto usa um bot oficial do Discord para coletar mensagens de um servidor. As mensagens capturadas podem ser do tipo `live`, para mensagens mineradas em tempo real, ou `historic`, que são mensagens capturadas via chamada GET. Ambos os tipos de mensagens são armazeados em .json na pasta `data/`.
 
-1. Voce cria um bot no Discord Developer Portal.
-2. Adiciona esse bot ao servidor.
-3. Habilita o `Message Content Intent`.
-4. Executa o script para capturar mensagens em tempo real.
-5. Opcionalmente, baixa um pequeno historico inicial do canal.
+Tabela de funcionalidades do Bot:
 
-## O que este exemplo faz
+| Funcionalidade | Como funciona hoje |
+| --- | --- |
+| Captura ao vivo | Começa a salvar mensagens novas quando alguém usa `.minerar`. |
+| Parar captura | Interrompe a mineração em tempo real com o comando `.parar`. |
+| Buscar histórico | Captura X mensagens do um canal a partir do comando `.historico <num_de_mensagens>`. Se o número não for passado junto ao comando ele captura todas as mensagens de um canal desde de sua criação.|
+| Identificar origem | Marca cada mensagem com `source`, usando `live` ou `historic`. |
 
-- Escuta novas mensagens em canais que o bot consegue acessar.
-- Salva cada mensagem em `data/messages.jsonl`.
-- Pode capturar tambem as ultimas `N` mensagens de um canal especifico quando inicia.
 
-Cada linha do arquivo `jsonl` vira um registro JSON independente, o que facilita depois carregar no Python, Pandas ou Spark.
+## Sumário
 
-## Aviso importante
+- [1. Configurando seu Bot](#1-configurando-seu-bot)
+   - [Criar o bot](#criar-o-bot)
+   - [Configurar o bot](#configurar-o-bot)
+   - [Adicionar o bot ao servidor](#adicionar-o-bot-ao-servidor)
+   - [Pegar os IDs do servidor e do canal](#pegar-os-ids-do-servidor-e-do-canal)
+- [2. Instalar as dependências e configurar o ambiente](#2-instalar-as-dependências-e-configurar-o-ambiente)
+- [3. Executar o bot](#3-executar-o-bot)
+- [4. Onde os dados ficam?](#4-onde-os-dados-ficam)
+- [7. Dependências](#7-dependências)
+- [8. Observações finais](#8-observações-finais)
 
-O caminho correto e usar um **bot**. Nao use token de usuario nem self-bot. Isso viola os termos do Discord e pode bloquear a conta.
+## 1. Configurando seu Bot 
+Para mais informações sobre os esse fluxo de criação de bot, consulte a documentação oficial: https://docs.discord.com/developers/topics/oauth2#bot-users
 
-## 1. Criar a aplicacao e o bot
+### Criar o bot
 
-1. Abra o Discord Developer Portal.
-2. Clique em `New Application`.
-3. Dê um nome para a aplicacao.
-4. Entre em `Bot`.
-5. Clique em `Reset Token` ou `Copy` para obter o token do bot.
-6. Em `Privileged Gateway Intents`, habilite `Message Content Intent`.
+1. Acesse o [Discord Developer Portal](https://discord.com/developers/home).
+2. Clique em **New Application**.
+3. Dê um nome para a aplicação.
+4. Abra a aba **Bot**.
+5. Clique em **Add Bot**.
+6. Copie o token do bot. Você vai usar esse valor no arquivo `.env`.
 
-Sem esse intent, o bot costuma receber a estrutura da mensagem, mas o campo `content` pode vir vazio.
+### Configurar o bot
 
-## 2. Adicionar o bot ao servidor
+1. Ainda na aba **Bot**, ative os intents privilegiados abaixo:
+- `Presence Intent`
+- `Server Members Intent`
+- `Message Content Intent`
+2. Salve as mudanças.
 
-1. No Developer Portal, entre em `OAuth2 > URL Generator`.
-2. Marque `bot` em `Scopes`.
-3. Em `Bot Permissions`, marque pelo menos:
-   - `View Channels`
-   - `Read Message History`
-4. Abra a URL gerada.
-5. Escolha o servidor onde voce tem permissao para adicionar bots.
+Importante: o script atual usa `discord.Intents.all()`. Por isso, esses intents precisam estar habilitados para o bot funcionar do jeito que o código espera.
 
-## 3. Descobrir os IDs do servidor e do canal
+### Adicionar o bot ao servidor
 
-1. No Discord, ative `Modo Desenvolvedor` nas configuracoes avancadas.
-2. Clique com o botao direito no servidor e copie o ID do servidor.
-3. Clique com o botao direito no canal e copie o ID do canal.
+1. Abra **OAuth2 > URL Generator**.
+2. Em **Scopes**, marque `bot`.
+3. Em **Bot Permissions**, marque pelo menos:
+- `View Channels`
+- `Send Messages`
+- `Read Message History`
+4. Copie a URL e cole em uma aba do seu navegador.
+5. Escolha o servidor em que o bot vai entrar.
+6. Conclua a autorização.
 
-## 4. Preparar o ambiente
+> ⚠️ Atenção: você só pode adicionar o bot em servidores que você criou ou nos quais tem permissões de administrador.
 
-No PowerShell, dentro desta pasta:
+### Pegar os IDs do servidor e do canal
+
+1. No Discord, vá em **Configurações > Avançado** e ative **Modo Desenvolvedor**.
+2. Clique com o botão direito no servidor e copie o ID do servidor.
+3. Se quiser, clique com o botão direito em um canal e copie o ID do canal.
+
+![Como conseguir o id do servidor?](./exemple.png)
+
+## 2. Instalar as dependências e configurar o ambiente
+
+Na raiz do projeto:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-Copy-Item .env.example .env
 ```
 
-Depois edite o arquivo `.env` com os seus valores:
+Crie ou edite o arquivo `.env` na raiz do projeto com este conteúdo:
 
 ```env
 DISCORD_BOT_TOKEN=cole_o_token_aqui
 DISCORD_GUILD_ID=123456789012345678
 DISCORD_CHANNEL_ID=123456789012345678
-DISCORD_HISTORY_LIMIT=20
 ```
 
-### Significado das variaveis
 
-- `DISCORD_BOT_TOKEN`: token do bot.
-- `DISCORD_GUILD_ID`: limita a captura a um servidor especifico.
-- `DISCORD_CHANNEL_ID`: limita a captura a um canal especifico.
-- `DISCORD_HISTORY_LIMIT`: quantas mensagens antigas buscar na inicializacao.
+## 3. Executar o bot
 
-Se voce deixar `DISCORD_HISTORY_LIMIT=0`, o bot captura so mensagens novas.
-
-## 5. Executar
+Com o ambiente ativo, rode:
 
 ```powershell
-python bot.py
+python scripts/bot.py
 ```
 
-Se tudo estiver certo, voce vai ver logs como:
+Se a conexão der certo, o terminal mostra algo como:
 
 ```text
 Bot conectado como MeuBot#1234.
 Servidor alvo: MeuServidor (123456789012345678)
-[LIVE] MeuServidor / #geral / usuario: ola pessoal
+
 ```
+Pronto! Agora você pode testar seu bot no servidor em que ele está instalado :D
 
-## 6. Estrutura do arquivo de saida
+## 4. Onde os dados ficam?
 
-O arquivo `data/messages.jsonl` tera uma linha JSON por mensagem, por exemplo:
+As mensagens são salvas em `data/messages.jsonl`.
+
+Esse arquivo cresce linha por linha. Cada linha é um JSON independente.
+
+Exemplo de registro:
 
 ```json
-{"id": 1, "created_at": "2026-07-26T18:00:00+00:00", "guild_id": 123, "guild_name": "MeuServidor", "channel_id": 456, "channel_name": "geral", "author_id": 789, "author_name": "usuario", "content": "ola pessoal", "attachments": [], "capture_source": "live"}
+{
+   "id": 123456789012345678,
+   "created_at": "2026-08-03T14:20:00+00:00",
+   "edited_at": null,
+   "guild_id": 111111111111111111,
+   "guild_name": "MeuServidor",
+   "channel_id": 222222222222222222,
+   "channel_name": "geral",
+   "author_id": 333333333333333333,
+   "author_server_name": "usuario",
+   "author_global_name": "Usuario Global",
+   "bot": false,
+   "content": "mensagem de teste",
+   "mentions?": false,
+   "mentioned_everyone?": false,
+   "attachments": [],
+   "type": 0,
+   "source": "live"
+}
 ```
 
-## 7. Ler os dados depois no Python
+O campo `source` pode ter dois valores:
+- `live`: mensagem capturada enquanto o `.minerar` está ligado.
+- `historic`: mensagem trazida pelo comando `.historico`.
 
-Exemplo rapido com Pandas:
+Para mais informações sobre o objeto Mensagem, veja documentação oficial: https://docs.discord.com/developers/resources/message#get-channel-messages
 
-```python
-import pandas as pd
+## 7. Dependências
 
-df = pd.read_json("data/messages.jsonl", lines=True)
-print(df.head())
-```
+As dependências do projeto estão em `requirements.txt`:
+- `discord.py`
+- `python-dotenv`
 
-## 8. Limites e observacoes
+## 8. Observações finais
 
-- O bot so enxerga canais em que foi adicionado e tem permissao.
-- O bot nao entra em servidores sozinho; voce precisa autoriza-lo pela URL OAuth2.
-- Se quiser minerar muito historico, faca isso com cuidado para nao gerar duplicidade nos arquivos.
-- Para analise etica, avise os participantes do minicurso que as mensagens estao sendo coletadas.
+Use sempre um bot oficial criado no Discord Developer Portal. Não use token de usuário e não tente rodar self-bot. Isso viola os termos da plataforma.
 
-## 9. Proximo passo sugerido
-
-Depois que isso estiver funcionando, o passo natural e criar um notebook ou script de analise para:
-
-- contar mensagens por usuario,
-- medir horarios de maior atividade,
-- extrair palavras frequentes,
-- analisar sentimento ou temas.
+Se você for coletar mensagens de outras pessoas, deixe claro para o servidor que a coleta está acontecendo e qual será o uso desses dados.

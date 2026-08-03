@@ -113,15 +113,15 @@ async def on_message(message: discord.Message) -> None:
     
     # Condicionais de controle de mineração      
     if message.content.startswith(".minerar") and minerar is False:
-        await message.channel.send("oVo MiNeraR SEu seRViDoR :P")
+        await message.channel.send("oVo MiNeraR SEu seRViDoR :D")
         minerar = True
     elif message.content.startswith(".minerar") and minerar is True:
-        await message.channel.send("JÁ tO mINerAndO mEu ChaPa!")
+        await message.channel.send("Já to minerando meu chapa :)")
     elif message.content.startswith(".parar") and minerar is True:
-        await message.channel.send("Parando a mineração :P")
+        await message.channel.send("Parando aqui goat :P")
         minerar = False
     elif message.content.startswith(".parar") and minerar is False:
-        await message.channel.send("Não estou minerando nada :P")
+        await message.channel.send("To fazendo nada mano :(")
     
     if minerar is True:
         save_message(message, source="live")
